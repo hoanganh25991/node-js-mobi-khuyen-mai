@@ -1,0 +1,15 @@
+{
+  "name": "node-js-mobifone-khuyen-mai",
+  "version": "1.0.0",
+  "description": "node-js-mobifone-khuyen-mai",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Anh Le Hoang",
+  "license": "MIT",
+  "dependencies": {
+    "cheerio": "^0.22.0",
+    "unirest": "^0.5.1"
+  }
+}
