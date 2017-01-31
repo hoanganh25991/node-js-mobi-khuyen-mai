@@ -93,7 +93,8 @@ let notifyKhuyenmaiNew = function(){
 				]
 			};
 
-		var req = unirest("POST", "https://hooks.slack.com/services/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");
+		let slackHookUrl = require('./config').slackHookUrl;
+		var req = unirest("POST", slackHookUrl);
 		req.headers({});
 
 	  	req.send(JSON.stringify(slackMsg));
