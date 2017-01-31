@@ -4,6 +4,8 @@ let moment = require('moment');
 const timezone = 7 * 60; //vietnam
 
 let sentMsg = [];
+const renewSentMsg = 7 * 86400000; //7 days
+let lastTimeSentMsg;
 
 let  req = unirest("GET", "http://dichvumobifone.com/khuyen-mai");
 req.headers({});
@@ -11,52 +13,65 @@ req.end(function(res) {
     if (res.error) throw new Error(res.error);
 
     let $ = cheerio.load(res.body);
-    let newsTitle = $('body > div.wrap-content > div > div > div.col-md-9.content')
-    				.find('h3 > a')
-    				.map(function(){
-    					return $(this).text().toLowerCase();
-    				})
-    				.toArray();
-    				;
-	let khuyenmaiNews = newsTitle.filter(title => {
-		let matches = title.match(/(khuyến mãi|thẻ|\d+\/\d+\/\d+)/g);
+    let contentSelector = 'body > div.wrap-content > div > div > div.col-md-9.content';
+    let newsTitle = $(contentSelector)
+	    				.find('h3 > a')
+	    				.map(function(){
+	    					return $(this).text().toLowerCase();
+	    				})
+	    				.toArray();
+	    				;
 
-		if(matches && matches[0] == 'khuyến mãi' && matches[1] == 'thẻ'){
-			let date = matches[2];
-			date = moment(date, 'D/M/YYYY').utcOffset(timezone);
+	let khuyenmaiNews = newsTitle
+							.filter(title => {
+								let matches = title.match(/(khuyến mãi|thẻ|\d+\/\d+\/\d+)/g);
 
-			if(!date.isValid())
-				return false;
+								if(matches && matches[0] == 'khuyến mãi' && matches[1] == 'thẻ'){
+									let date = matches[2];
+									date = moment(date, 'D/M/YYYY').utcOffset(timezone);
 
-			let today = moment().utcOffset(timezone);
-			if(date.isAfter(today))
-				return true;
+									if(!date.isValid())
+										return false;
 
-			return false;
-		}
+									let today = moment().utcOffset(timezone);
+									if(date.isAfter(today))
+										return true;
 
-		return false;
-	});
+									return false;
+								}
 
-	khuyenmaiNews = khuyenmaiNews.filter(news => {
-		if(sentMsg.includes(news))
-			return false;
+								return false;
+							});
+	let now = Number(moment().format('X'));
+	let gap =  now - (lastTimeSentMsg | 0);
+	if(gap > renewSentMsg)
+		sentMsg = [];
 
-		return true;
-	});
+	khuyenmaiNews = khuyenmaiNews
+						.filter(news => {
+							if(sentMsg.includes(news))
+								return false;
+
+							return true;
+						});
+
 
 	if(khuyenmaiNews.length <= 0){
 		console.log('no news');
 		return false;
 	}
 
+	//update lastTimeSentMsg
+	lastTimeSentMsg = now;
 
-	let slackMsgFields = khuyenmaiNews.map(title => {
-		let value = title;
-		let short = false;
+	// build msg to sent
+	let slackMsgFields = khuyenmaiNews
+							.map(title => {
+								let value = title;
+								let short = false;
 
-		return {value, short};
-	});
+								return {value, short};
+							});
 
 	let slackMsg = {
 			text: `--- >>> ---`,
@@ -66,8 +81,8 @@ req.end(function(res) {
 					// title_link: 'https://tinker.press',
 					fields: slackMsgFields,
 					color: '#3381C5',
-					footer: '“The best way to predict the future is to create it.” – Peter Drucker  ᕕ( ᐛ )ᕗ',
-					footer_icon: 'https://tinker.press/favicon-64x64.png',
+					footer: '“Talk is cheap. Show me the code.” - Linus Torvalds',
+					footer_icon: 'https://tinker.press/favicon.ico',
 					ts: Math.floor(new Date().getTime() / 1000)
 				}
 			]
