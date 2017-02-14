@@ -1,17 +1,19 @@
-let  unirest = require("unirest");
-let cheerio = require('cheerio');
-let moment = require('moment');
+const unirest  = require("unirest");
+const cheerio  = require('cheerio');
+const moment   = require('moment');
 const timezone = 7 * 60; //vietnam
+const renewSentMsg = 7 * 86400000; //7 days in ms
 
 let sentMsg = [];
-const renewSentMsg = 7 * 86400000; //7 days
 let lastTimeSentMsg;
 
 console.log('Running interval loop\n');
 
 let notifyKhuyenmaiNew = function(){
+	//log when
 	let at = moment().utcOffset(timezone).format('DD-MM-YYY HH:mm:ss');
 	console.log(`[${at}] check 'khyen mai' news\n`);
+	//do craw to mobiphone page
 	let  req = unirest("GET", "http://dichvumobifone.com/khuyen-mai");
 	req.headers({});
 	req.end(function(res) {
@@ -47,10 +49,12 @@ let notifyKhuyenmaiNew = function(){
 
 									return false;
 								});
-		let now = Number(moment().format('X'));
+		let now = Number(moment().format('x')); //get timestamp
 		let gap =  now - (lastTimeSentMsg | 0);
-		if(gap > renewSentMsg)
+		if(gap > renewSentMsg){
+			console.log('Re new message');
 			sentMsg = [];
+		}
 
 		khuyenmaiNews = khuyenmaiNews
 							.filter(news => {
